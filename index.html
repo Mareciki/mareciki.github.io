@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rodzina Marecików</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/css/family-chart.css">
+    <link rel="icon" href="assets/img/tree.png" type="image/x-icon">
+    <script src="assets/js/d3.min.js"></script>
+    <script src="assets/js/family-chart.min.js"></script>
+    <script src="assets/js/aes.js"></script>
+    <style>
+        body {
+            background-color: hsl(0, 0%, 96%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container px-1 py-4 px-md-1 text-center text-lg-start vh-90" id="logger">
+        <div class="gx-lg-5 align-items-center">
+            <div class="col-lg-12 mb-5 mb-lg-0 mx-auto">
+                <h1 class="my-4 display-4 fw-bold ls-tight text-md-center text-lg-start d-md-none">
+                    <span class="text-primary">Rodzina Marecików</span>
+                </h1>
+                <h1 class="my-4 display-3 fw-bold ls-tight text-md-center text-lg-start d-none d-md-block">
+                    <span class="text-primary">Rodzina Marecików</span>
+                </h1>
+            </div>
+
+            <div class="col-lg-6 mb-5 mx-auto">
+                <p style="color: hsl(217, 10%, 50.8%)">
+                    Niniejsza strona zawiera diagram wizualizujący genealogię rodziny Marecików sięgającą XVII
+                    wieku. Aby wyświetlić treść, wpisz hasło.
+                </p>
+            </div>
+
+            <div class="col-lg-6 mb-5 mb-lg-0 mx-auto">
+                <div class="card">
+                    <div class="card-body py-5 px-md-5">
+                        <form id="passwordForm">
+
+                            <div class="form-outline mb-4">
+                                <input type="password" id="passwordInput" placeholder="Hasło" class="form-control" />
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-block mb-4">
+                                Zatwierdź
+                            </button>
+
+                            <div class="mb-1">
+                                <div class="alert alert-danger" role="alert" id="alert" style="display: none">
+                                    Błędne hasło! Spróbuj ponownie.
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="FamilyChart" class="f3"></div>
+
+    <script>
+        let decryptedJSON;
+        document.getElementById('passwordForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            var password = document.getElementById('passwordInput').value;
+            fetch("assets/data/data.json.encrypted")
+                .then(response => response.text())
+                .then(data => {
+                    let dataURI = CryptoJS.AES.decrypt(data, password).toString(CryptoJS.enc.Latin1);
+                    if (!/^data:/.test(dataURI)) {
+                        document.getElementById("alert").style.display = "block";
+                        document.getElementById('passwordInput').value = "";
+                        return false;
+                    } else {
+                        let json = atob(dataURI.substring(29));
+                        decryptedJSON = JSON.parse(json);
+                        document.getElementById("logger").style.display = "none";
+                        console.log(decryptedJSON);
+                        generateTree();
+                    }
+                });
+        });
+
+        function generateTree() {
+            const store = f3.createStore({
+                    data: decryptedJSON,
+                    node_separation: 270,
+                    level_separation: 150
+                }),
+                view = f3.d3AnimationView({
+                    store,
+                    cont: document.querySelector("#FamilyChart")
+                }),
+                Card = f3.elements.Card({
+                    store,
+                    svg: view.svg,
+                    card_dim: {
+                        w: 240,
+                        h: 70,
+                        text_x: 75,
+                        text_y: 15,
+                        img_w: 60,
+                        img_h: 60,
+                        img_x: 5,
+                        img_y: 5
+                    },
+                    card_display: [d => `${d.data["name"]} ${d.data["surname"]}`, d =>
+                        `${d.data["birthday"]} - ${d.data["death"]}`
+                    ],
+                    mini_tree: true,
+                    link_break: false
+                })
+
+            view.setCard(Card)
+            store.setOnUpdate(props => view.update(props || {}))
+            store.update.tree({
+                initial: true
+            })
+        }
+    </script>
+</body>
+
+</html>
