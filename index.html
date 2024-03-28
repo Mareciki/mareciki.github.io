@@ -83,7 +83,6 @@
                         let json = atob(dataURI.substring(29));
                         decryptedJSON = JSON.parse(json);
                         document.getElementById("logger").style.display = "none";
-                        console.log(decryptedJSON);
                         generateTree();
                     }
                 });
