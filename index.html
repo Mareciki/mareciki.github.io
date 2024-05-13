@@ -80,13 +80,19 @@
                         document.getElementById('passwordInput').value = "";
                         return false;
                     } else {
-                        let json = atob(dataURI.substring(29));
+                        let json = b64DecodeUnicode(dataURI.substring(29));
                         decryptedJSON = JSON.parse(json);
                         document.getElementById("logger").style.display = "none";
                         generateTree();
                     }
                 });
         });
+
+        function b64DecodeUnicode(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+        }
 
         function generateTree() {
             const store = f3.createStore({
